@@ -97,11 +97,9 @@ class MainApplication(tk.Frame):
 				for i, _ in enumerate(p.imap_unordered(save_as_jp2, arg_dicts)):
 					self.progress_bar['value'] = i
 					self.parent.update()
-				
-
-				
 
 if __name__ == '__main__':
+	multiprocessing.freeze_support()
 	root = tk.Tk()
 	app = MainApplication(root)
 	root.mainloop()
