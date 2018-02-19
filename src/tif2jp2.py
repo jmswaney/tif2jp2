@@ -4,7 +4,23 @@ from tkinter import ttk
 from pathlib import Path
 import tifffile
 from PIL import Image
+import multiprocessing
 
+
+def save_as_jp2(arg_dict):
+	input_path = arg_dict['input_path']
+	output_path = arg_dict['output_path']
+	tif_path = arg_dict['tif_path']
+
+	tif_img = tifffile.imread(str(tif_path))
+	img = Image.fromarray(tif_img)
+
+	output_subdir = output_path.joinpath(tif_path.relative_to(input_path).parent)
+	output_subdir.mkdir(parents=True, exist_ok=True)
+
+	jp2_filename = tif_path.stem + '.jp2'
+	jp2_path = output_subdir.joinpath(jp2_filename)
+	img.save(jp2_path, quality_mode='rates', quality_layers=[20])
 
 class MainApplication(tk.Frame):
 
@@ -57,6 +73,7 @@ class MainApplication(tk.Frame):
 		if self.input_path is not None and self.input_path.exists() and self.input_path.is_dir():
 
 			self.output_path = Path(self.input_path.parent).joinpath(str(self.input_path)+'_jp2')
+			# self.output_path = Path(self.input_path.parent).joinpath(str(self.input_path)+'_jpg')
 			self.output_path.mkdir(exist_ok=True)
 
 			tif_paths = list(self.input_path.glob('**/*.tif*'))
@@ -64,22 +81,25 @@ class MainApplication(tk.Frame):
 
 			self.progress_bar['value'] = 0
 			self.progress_bar['maximum'] = nb_tifs-1
+			
+			arg_dicts = []
+			for i, tif_path in enumerate(tif_paths):
+				arg_dict = {
+					'input_path': self.input_path,
+					'output_path': self.output_path,
+					'tif_path': tif_path,
+				}
+				arg_dicts.append(arg_dict)
 
-			for i, t in enumerate(tif_paths):
+			nb_cpu = multiprocessing.cpu_count()
+			nb_processes = max(1, nb_cpu-1)
+			with multiprocessing.Pool(processes=nb_processes) as p:
+				for i, _ in enumerate(p.imap_unordered(save_as_jp2, arg_dicts)):
+					self.progress_bar['value'] = i
+					self.parent.update()
+				
 
-				self.progress_bar['value'] = i
-				self.parent.update_idletasks()
-
-				tif_img = tifffile.imread(str(t))
-				img = Image.fromarray(tif_img)
-
-				output_subdir = self.output_path.joinpath(t.relative_to(self.input_path).parent)
-				output_subdir.mkdir(parents=True, exist_ok=True)
-
-				jp2_filename = t.stem + '.jp2'
-				jp2_path = output_subdir.joinpath(jp2_filename)
-				img.save(jp2_path)
-
+				
 
 if __name__ == '__main__':
 	root = tk.Tk()

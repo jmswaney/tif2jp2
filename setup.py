@@ -19,8 +19,9 @@ executables = [cx_Freeze.Executable('src/tif2jp2.py', base=base, icon='logo.ico'
 
 cx_Freeze.setup(
 	name = 'tif2jp2',
-	options = {'build_exe': {'packages': ['tkinter', 'PIL', 'tifffile', 'numpy', 'lxml', 'pkg_resources._vendor'], 'include_files': include_files, 'includes': includes}},
-	version = '0.01',
+	options = {'build_exe': {'packages': ['tkinter', 'PIL', 'multiprocessing', 'tifffile', 'numpy', 'lxml', 'pkg_resources._vendor'], 
+			'include_files': include_files, 'includes': includes}},
+	version = '0.02',
 	description = 'An app to convert tifs to JPEG2000',
 	executables = executables
 	)
