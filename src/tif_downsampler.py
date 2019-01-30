@@ -6,6 +6,7 @@ import tifffile
 # from PIL import Image
 import multiprocessing
 from skimage.measure import block_reduce
+from raw import raw_imread
 
 
 DOWNSAMPLE_OPTIONS = ['2', '4', '8']
@@ -16,7 +17,10 @@ def save_as_downsampled(arg_dict):
 	tif_path = arg_dict['tif_path']
 	downsample_factor = arg_dict['downsample_factor']
 
-	tif_img = tifffile.imread(str(tif_path))
+	if str(tif_path).endswith('.tif*'):
+		tif_img = tifffile.imread(str(tif_path))
+	else:
+		tif_img = raw_imread(str(tif_path))
 
 	downsampled_tif = block_reduce(tif_img, block_size=(downsample_factor, downsample_factor))
 	downsampled_tif = downsampled_tif.astype(tif_img.dtype)
@@ -29,7 +33,7 @@ def save_as_downsampled(arg_dict):
 	downsampled_filename = tif_path.stem + '.tif'
 	downsampled_path = output_subdir.joinpath(downsampled_filename)
 
-	tifffile.imsave(str(downsampled_path), downsampled_tif)
+	tifffile.imsave(str(downsampled_path), downsampled_tif, compress=1)
 
 	# img.save(downsampled_path, quality_mode='rates', quality_layers=[20])
 
@@ -95,6 +99,8 @@ class MainApplication(tk.Frame):
 
 			tif_paths = list(self.input_path.glob('**/*.tif*'))
 			nb_tifs = len(tif_paths)
+			if nb_tifs == 0:
+				tif_paths = list(self.input_path.glob('**/*.raw'))
 
 			self.progress_bar['value'] = 0
 			self.progress_bar['maximum'] = nb_tifs-1
